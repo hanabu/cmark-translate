@@ -1,0 +1,22 @@
+[package]
+name = "md-translate"
+version = "0.1.0"
+authors = ["Hanabusa Masahiro"]
+description = "Translate Markdown using DeepL API"
+edition = "2021"
+readme = "README.md"
+repository = "https://github.com/hanabu/md-translate"
+license = "MIT"
+keywords = ["markdown", "translate", "deepl"]
+categories = ["text-processing", "localization"]
+
+[dependencies]
+comrak = { version = "0.14", default-features = false }
+clap = "3"
+
+[profile.release]
+# Size optimization
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+

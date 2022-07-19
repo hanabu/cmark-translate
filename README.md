@@ -1,2 +1,4 @@
 # md-translate
-Translate Markdown using DeepL API
+
+Translate Markdown file using DeepL API.
+
