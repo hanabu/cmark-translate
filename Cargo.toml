@@ -11,12 +11,22 @@ keywords = ["markdown", "translate", "deepl"]
 categories = ["text-processing", "localization"]
 
 [dependencies]
-comrak = { version = "0.14", default-features = false }
-clap = "3"
+clap = { version="4", default-features=false, features=["std", "help"] }
+comrak = "0.14"
+dirs = "4"
+env_logger = "0.9"
+glob = "0.3"
+log = "0.4"
+quick-xml = "0.25"
+reqwest = { version="0.11", features=["native-tls", "json"] }
+serde = { version="1", features=["derive"] }
+tokio = { version="1", features=["macros", "rt"] }
+toml = "0.5"
 
 [profile.release]
-# Size optimization
-opt-level = "s"
-lto = "fat"
+# Make small binary
 codegen-units = 1
+lto = "fat"
+opt-level = "s"
+strip = "symbols"
 

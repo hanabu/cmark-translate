@@ -1,6 +1,8 @@
 *~
 *.bak
+*.sav
 *.swp
+.deepl
 .env
 /target
 
