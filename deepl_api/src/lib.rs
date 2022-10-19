@@ -131,7 +131,7 @@ struct DeeplResponse {
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 struct DeeplResponseTranslation {
-    #[warn(dead_code)]
+    #[allow(dead_code)]
     detected_source_language: String,
     text: String,
 }

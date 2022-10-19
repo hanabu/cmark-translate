@@ -1,6 +1,8 @@
 pub fn parse_md() -> std::io::Result<()> {
     let mdtext = std::fs::read_to_string("index.en.md").unwrap();
 
+    // pre-process shortcode
+
     // parse body as comrak AST
     let arena = comrak::Arena::new();
     let mdroot = comrak::parse_document(&arena, &mdtext, &comrak_options());
