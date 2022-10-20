@@ -1,13 +1,16 @@
+mod cmark_xml;
+mod deepl;
+
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
 
-    let deepl = deepl_api::Deepl::new().unwrap();
+    let deepl = deepl::Deepl::new().unwrap();
 
     translate_cmark_file(
         &deepl,
-        deepl_api::Language::En,
-        deepl_api::Language::De,
+        deepl::Language::En,
+        deepl::Language::De,
         "index.en.md",
         "index.de.md",
     )
@@ -17,9 +20,9 @@ async fn main() -> std::io::Result<()> {
 
 /// Translate CommonMark .md file
 async fn translate_cmark_file<P: AsRef<std::path::Path>>(
-    deepl: &deepl_api::Deepl,
-    from_lang: deepl_api::Language,
-    to_lang: deepl_api::Language,
+    deepl: &deepl::Deepl,
+    from_lang: deepl::Language,
+    to_lang: deepl::Language,
     src_path: P,
     dst_path: P,
 ) -> std::io::Result<()> {
@@ -47,8 +50,8 @@ async fn translate_cmark_file<P: AsRef<std::path::Path>>(
     // Translate CommonMark body
     let translated_cmark = translate_cmark(
         &deepl,
-        deepl_api::Language::En,
-        deepl_api::Language::De,
+        deepl::Language::En,
+        deepl::Language::De,
         &cmark_text,
     )
     .await?;
@@ -66,9 +69,9 @@ async fn translate_cmark_file<P: AsRef<std::path::Path>>(
 
 /// Translate TOML frontmatter
 async fn translate_toml(
-    deepl: &deepl_api::Deepl,
-    from_lang: deepl_api::Language,
-    to_lang: deepl_api::Language,
+    deepl: &deepl::Deepl,
+    from_lang: deepl::Language,
+    to_lang: deepl::Language,
     toml_frontmatter: &str,
 ) -> Result<String, std::io::Error> {
     if let toml::Value::Table(mut root) = toml_frontmatter.parse::<toml::Value>()? {
@@ -133,9 +136,9 @@ async fn translate_toml(
 
 /// Translate CommonMark
 async fn translate_cmark(
-    deepl: &deepl_api::Deepl,
-    from_lang: deepl_api::Language,
-    to_lang: deepl_api::Language,
+    deepl: &deepl::Deepl,
+    from_lang: deepl::Language,
+    to_lang: deepl::Language,
     cmark_text: &str,
 ) -> Result<String, std::io::Error> {
     let xml = cmark_xml::xml_from_cmark(&cmark_text, true);

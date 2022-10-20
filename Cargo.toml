@@ -1,9 +1,29 @@
-[workspace]
-members = [
-    "cmark_xml",
-    "deepl_api",
-    "md_translate_cli",
-]
+[package]
+name = "md-translate"
+version = "0.1.0"
+authors = ["Hanabusa Masahiro"]
+description = "Translate Markdown using DeepL API"
+edition = "2021"
+readme = "README.md"
+repository = "https://github.com/hanabu/md-translate"
+license = "MIT"
+keywords = ["markdown", "translate", "deepl"]
+categories = ["text-processing", "localization"]
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+clap = { version="4", default-features=false, features=["std", "help"] }
+comrak = "0.14"
+dirs = "4"
+env_logger = "0.9"
+minidom = "0.15"
+log = "0.4"
+reqwest = { version="0.11", features=["native-tls", "json"] }
+serde = { version="1", features=["derive"] }
+toml = "0.5"
+tokio = { version="1", features=["macros", "rt"] }
 
 [profile.release]
 # Make small binary

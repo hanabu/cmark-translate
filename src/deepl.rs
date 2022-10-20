@@ -160,7 +160,7 @@ impl Language {
 #[serde(rename_all = "snake_case")]
 struct DeeplConfig {
     api_key: String,
-    glossaries: std::collections::HashMap<String,String>
+    glossaries: std::collections::HashMap<String, String>,
 }
 
 impl DeeplConfig {
