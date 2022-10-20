@@ -2,7 +2,7 @@
 *.bak
 *.sav
 *.swp
-.deepl
 .env
+deepl.toml
 /target
 

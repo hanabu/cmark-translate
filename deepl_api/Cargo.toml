@@ -8,7 +8,7 @@ license = "MIT"
 workspace = ".."
 
 [lib]
-name = "depl_api"
+name = "deepl_api"
 path = "src/lib.rs"
 
 [dependencies]
