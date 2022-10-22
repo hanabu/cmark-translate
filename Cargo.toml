@@ -14,7 +14,7 @@ categories = ["text-processing", "localization"]
 path = "src/lib.rs"
 
 [dependencies]
-clap = { version="4", default-features=false, features=["std", "help"] }
+clap = { version="4", default-features=false, features=["derive", "std", "usage", "help"] }
 comrak = "0.14"
 dirs = "4"
 env_logger = "0.9"

@@ -3,7 +3,7 @@ pub struct Deepl {
 }
 
 impl Deepl {
-    // New DeepL instance with .deepl ~/.deepl
+    // New DeepL instance from default config file (deepl.toml or ~/.deepl.toml)
     pub fn new() -> std::io::Result<Self> {
         let deepl_config = DeeplConfig::new()?;
 
@@ -11,6 +11,17 @@ impl Deepl {
             config: deepl_config,
         })
     }
+
+    /// New DeepL instance from specific config file
+    pub fn with_config<P: AsRef<std::path::Path>>(config_path: P) -> std::io::Result<Self> {
+        let deepl_config = DeeplConfig::with_config(config_path)?;
+
+        Ok(Self {
+            config: deepl_config,
+        })
+    }
+
+    /// Translate single text string
     pub async fn translate(
         &self,
         from_lang: Language,
@@ -105,6 +116,32 @@ impl Deepl {
         }
     }
 
+    /// Register new glossary
+    pub async fn register_glossaries_from_file<P: AsRef<std::path::Path>>(
+        &self,
+        name: &str,
+        from_lang: Language,
+        to_lang: Language,
+        glossary_file: P,
+    ) -> std::io::Result<DeeplGlossary> {
+        let glossaries: Vec<(&str, &str)> = vec![];
+
+        self.register_glossaries(name, from_lang, to_lang, &glossaries)
+            .await
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+
+    /// Register new glossary
+    pub async fn register_glossaries(
+        &self,
+        name: &str,
+        from_lang: Language,
+        to_lang: Language,
+        glossaries: &[(&str, &str)],
+    ) -> reqwest::Result<DeeplGlossary> {
+        todo!()
+    }
+
     /// List registered glossaries
     pub async fn list_glossaries(&self) -> reqwest::Result<Vec<DeeplGlossary>> {
         let client = reqwest::Client::new();
@@ -123,9 +160,14 @@ impl Deepl {
         let deepl_resp = resp.json::<DeeplListGlossariesResponse>().await?;
         Ok(deepl_resp.glossaries)
     }
+
+    /// Remove registered glossaries
+    pub async fn remove_glossary(&self, id: &str) -> reqwest::Result<()> {
+        todo!()
+    }
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Clone, Copy, serde::Deserialize)]
 pub enum Language {
     De,
     Es,
@@ -156,6 +198,27 @@ impl Language {
     }
 }
 
+impl std::str::FromStr for Language {
+    type Err = std::io::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let lowcase = s.to_ascii_lowercase();
+        match lowcase.as_str() {
+            "de" => Ok(Self::De),
+            "es" => Ok(Self::Es),
+            "en" => Ok(Self::En),
+            "fr" => Ok(Self::Fr),
+            "it" => Ok(Self::It),
+            "ja" => Ok(Self::Ja),
+            "nl" => Ok(Self::Nl),
+            "pt" => Ok(Self::Pt),
+            "pt-br" => Ok(Self::PtBr),
+            "ru" => Ok(Self::Ru),
+            _ => Err(std::io::Error::from(std::io::ErrorKind::InvalidInput)),
+        }
+    }
+}
+
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "snake_case")]
 struct DeeplConfig {
@@ -175,7 +238,7 @@ impl DeeplConfig {
         ];
 
         for config_file in config_files {
-            match Self::new_with_config(&config_file) {
+            match Self::with_config(&config_file) {
                 Ok(conf) => {
                     log::debug!("Read config file {:?}", config_file);
                     return Ok(conf);
@@ -197,7 +260,7 @@ impl DeeplConfig {
     }
 
     // Config from specific file
-    fn new_with_config<P: AsRef<std::path::Path>>(config_path: P) -> std::io::Result<Self> {
+    fn with_config<P: AsRef<std::path::Path>>(config_path: P) -> std::io::Result<Self> {
         use std::io::Read;
         let mut file = std::fs::File::open(&config_path)?;
 
