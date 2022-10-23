@@ -35,6 +35,8 @@ enum Commands {
         #[command(subcommand)]
         command: GlossaryCommands,
     },
+    /// Show DeepL usage
+    Usage,
 }
 
 #[derive(clap::Subcommand)]
@@ -117,6 +119,10 @@ async fn main() -> std::io::Result<()> {
                     deepl.remove_glossary(&id).await.unwrap();
                 }
             }
+        }
+        Some(Commands::Usage) => {
+            let used_chars = deepl.get_usage().await.unwrap();
+            println!("{} characters used.", used_chars);
         }
         _ => {
             // Print help

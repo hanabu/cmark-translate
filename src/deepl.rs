@@ -165,6 +165,25 @@ impl Deepl {
     pub async fn remove_glossary(&self, id: &str) -> reqwest::Result<()> {
         todo!()
     }
+
+    /// Get usage, returns translated characters
+    pub async fn get_usage(&self) -> reqwest::Result<i32> {
+        let client = reqwest::Client::new();
+
+        // Make DeepL API request
+        let resp = client
+            .get(self.config.endpoint("usage"))
+            .header(
+                "authorization",
+                format!("DeepL-Auth-Key {}", self.config.api_key),
+            )
+            .send()
+            .await?;
+
+        // Parse response
+        let deepl_resp = resp.json::<DeeplUsageResponse>().await?;
+        Ok(deepl_resp.character_count)
+    }
 }
 
 #[derive(Clone, Copy, serde::Deserialize)]
@@ -318,6 +337,15 @@ pub struct DeeplGlossary {
     pub target_lang: String,
     pub creation_time: String,
     pub entry_count: i32,
+}
+
+/// DeepL usage response JSON
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+struct DeeplUsageResponse {
+    character_count: i32,
+    #[allow(dead_code)]
+    character_limit: i32,
 }
 
 #[cfg(test)]
