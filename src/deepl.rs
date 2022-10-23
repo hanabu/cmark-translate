@@ -50,8 +50,13 @@ impl Deepl {
         let mut params = vec![
             ("source_lang", from_lang.as_langcode()),
             ("target_lang", to_lang.as_langcode()),
+            ("preserve_formatting", "1"),
             ("formality", "prefer_less"),
         ];
+        if let Some(glossary_id) = self.config.glossary(from_lang, to_lang) {
+            log::debug!("Use glossary {}", glossary_id);
+            params.push(("glossary_id", glossary_id));
+        }
 
         // add texts to be translated
         for t in body {
@@ -87,6 +92,25 @@ impl Deepl {
     ) -> reqwest::Result<String> {
         let client = reqwest::Client::new();
 
+        let mut params = vec![
+            ("source_lang", from_lang.as_langcode()),
+            ("target_lang", to_lang.as_langcode()),
+            ("preserve_formatting", "1"),
+            ("formality", "prefer_less"),
+            ("tag_handling", "xml"),
+            ("ignore_tags", "header,embed,object"),
+            (
+                "splitting_tags",
+                "blockquote,li,dt,dd,p,h1,h2,h3,h4,h5,h6,th,td",
+            ),
+            ("non_splitting_tags", "embed,em,strong,del,a,img"),
+        ];
+        if let Some(glossary_id) = self.config.glossary(from_lang, to_lang) {
+            log::debug!("Use glossary {}", glossary_id);
+            params.push(("glossary_id", glossary_id));
+        }
+        params.push(("text", xml_body));
+
         // Make DeepL API request
         let resp = client
             .post(self.config.endpoint("translate"))
@@ -94,20 +118,7 @@ impl Deepl {
                 "authorization",
                 format!("DeepL-Auth-Key {}", self.config.api_key),
             )
-            .form(&[
-                ("source_lang", from_lang.as_langcode()),
-                ("target_lang", to_lang.as_langcode()),
-                ("formality", "prefer_less"),
-                ("formality", "prefer_less"),
-                ("tag_handling", "xml"),
-                ("ignore_tags", "header,embed,object"),
-                (
-                    "splitting_tags",
-                    "blockquote,li,dt,dd,p,h1,h2,h3,h4,h5,h6,th,td",
-                ),
-                ("non_splitting_tags", "embed,em,strong,del,a,img"),
-                ("text", xml_body),
-            ])
+            .form(&params)
             .send()
             .await?;
 
@@ -305,6 +316,12 @@ impl DeeplConfig {
             // API Pro key
             format!("https://api.deepl.com/v2/{}", api)
         }
+    }
+
+    // Find glossary
+    fn glossary<'a>(&'a self, from_lang: Language, to_lang: Language) -> Option<&'a str> {
+        let glossary_key = format!("{}_{}", from_lang.as_langcode(), to_lang.as_langcode());
+        self.glossaries.get(&glossary_key).map(|v| v.as_str())
     }
 }
 
