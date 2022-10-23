@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+//!
+//! DeepL REST API wrapper
+//!
+
 pub struct Deepl {
     config: DeeplConfig,
 }
@@ -45,8 +50,6 @@ impl Deepl {
         to_lang: Language,
         body: &Vec<&str>,
     ) -> reqwest::Result<Vec<String>> {
-        let client = reqwest::Client::new();
-
         let mut params = vec![
             ("source_lang", from_lang.as_langcode()),
             ("target_lang", to_lang.as_langcode()),
@@ -64,6 +67,7 @@ impl Deepl {
         }
 
         // Make DeepL API request
+        let client = reqwest::Client::new();
         let resp = client
             .post(self.config.endpoint("translate"))
             .header(
@@ -90,8 +94,7 @@ impl Deepl {
         to_lang: Language,
         xml_body: &str,
     ) -> reqwest::Result<String> {
-        let client = reqwest::Client::new();
-
+        // Prepare request parameters
         let mut params = vec![
             ("source_lang", from_lang.as_langcode()),
             ("target_lang", to_lang.as_langcode()),
@@ -112,6 +115,7 @@ impl Deepl {
         params.push(("text", xml_body));
 
         // Make DeepL API request
+        let client = reqwest::Client::new();
         let resp = client
             .post(self.config.endpoint("translate"))
             .header(
@@ -133,36 +137,55 @@ impl Deepl {
     }
 
     /// Register new glossary
-    pub async fn register_glossaries_from_file<P: AsRef<std::path::Path>>(
+    pub async fn register_glossaries<S: AsRef<str>>(
         &self,
         name: &str,
         from_lang: Language,
         to_lang: Language,
-        glossary_file: P,
-    ) -> std::io::Result<DeeplGlossary> {
-        let glossaries: Vec<(&str, &str)> = vec![];
-
-        self.register_glossaries(name, from_lang, to_lang, &glossaries)
-            .await
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
-    }
-
-    /// Register new glossary
-    pub async fn register_glossaries(
-        &self,
-        name: &str,
-        from_lang: Language,
-        to_lang: Language,
-        glossaries: &[(&str, &str)],
+        glossaries: &[(S, S)],
     ) -> reqwest::Result<DeeplGlossary> {
-        todo!()
+        // Make TSV text
+        let tsv: String = glossaries
+            .iter()
+            .filter_map(|(from, to)| {
+                let from_trimed = from.as_ref().trim();
+                let to_trimed = to.as_ref().trim();
+                if from_trimed.is_empty() || to_trimed.is_empty() {
+                    None
+                } else {
+                    Some(format!("{}\t{}", from_trimed, to_trimed))
+                }
+            })
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        // Make DeepL API request
+        let client = reqwest::Client::new();
+        let resp = client
+            .post(self.config.endpoint("glossaries"))
+            .header(
+                "authorization",
+                format!("DeepL-Auth-Key {}", self.config.api_key),
+            )
+            .form(&[
+                ("name", name),
+                ("source_lang", from_lang.as_langcode()),
+                ("target_lang", to_lang.as_langcode()),
+                ("entries_format", "tsv"),
+                ("entries", &tsv),
+            ])
+            .send()
+            .await?;
+
+        // Parse response
+        let deepl_resp = resp.json::<DeeplGlossary>().await?;
+        Ok(deepl_resp)
     }
 
     /// List registered glossaries
     pub async fn list_glossaries(&self) -> reqwest::Result<Vec<DeeplGlossary>> {
-        let client = reqwest::Client::new();
-
         // Make DeepL API request
+        let client = reqwest::Client::new();
         let resp = client
             .get(self.config.endpoint("glossaries"))
             .header(
@@ -179,14 +202,27 @@ impl Deepl {
 
     /// Remove registered glossaries
     pub async fn remove_glossary(&self, id: &str) -> reqwest::Result<()> {
-        todo!()
+        // Make DeepL API request
+        let client = reqwest::Client::new();
+        let resp = client
+            .delete(self.config.endpoint(&format!("glossaries/{}", id)))
+            .header(
+                "authorization",
+                format!("DeepL-Auth-Key {}", self.config.api_key),
+            )
+            .send()
+            .await?;
+
+        // Check response
+        resp.error_for_status()?;
+
+        Ok(())
     }
 
     /// Get usage, returns translated characters
     pub async fn get_usage(&self) -> reqwest::Result<i32> {
-        let client = reqwest::Client::new();
-
         // Make DeepL API request
+        let client = reqwest::Client::new();
         let resp = client
             .get(self.config.endpoint("usage"))
             .header(
@@ -217,7 +253,7 @@ pub enum Language {
 }
 
 impl Language {
-    fn as_langcode(&self) -> &'static str {
+    pub fn as_langcode(&self) -> &'static str {
         match self {
             Self::De => "de",
             Self::Es => "es",

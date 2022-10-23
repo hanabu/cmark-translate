@@ -1,5 +1,6 @@
 mod cmark_xml;
 mod deepl;
+mod glossary;
 mod trans;
 
 use clap::{CommandFactory, Parser};
@@ -104,9 +105,17 @@ async fn main() -> std::io::Result<()> {
                 } => {
                     let from_lang = deepl::Language::from_str(&from)?;
                     let to_lang = deepl::Language::from_str(&to)?;
+
+                    let glossaries = glossary::read_glossary(
+                        input,
+                        from_lang.as_langcode(),
+                        to_lang.as_langcode(),
+                    ).unwrap();
+
                     deepl
-                        .register_glossaries_from_file(&name, from_lang, to_lang, input)
-                        .await?;
+                        .register_glossaries(&name, from_lang, to_lang, &glossaries)
+                        .await
+                        .unwrap();
                 }
                 GlossaryCommands::List => {
                     // List glossaries

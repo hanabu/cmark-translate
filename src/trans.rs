@@ -102,7 +102,7 @@ pub async fn translate_toml(
         // Serialize toml::Value should not fail
         let translated_frontmatter = toml::to_string_pretty(&toml::Value::Table(root)).unwrap();
         // Show translated frontmatter
-        log::debug!("Translated TOML :\n{}\n", translated_frontmatter);
+        log::trace!("Translated TOML :\n{}\n", translated_frontmatter);
 
         Ok(translated_frontmatter)
     } else {
