@@ -101,6 +101,11 @@ impl Deepl {
                 ("formality", "prefer_less"),
                 ("tag_handling", "xml"),
                 ("ignore_tags", "header,embed,object"),
+                (
+                    "splitting_tags",
+                    "blockquote,li,dt,dd,p,h1,h2,h3,h4,h5,h6,th,td",
+                ),
+                ("non_splitting_tags", "embed,em,strong,del,a,img"),
                 ("text", xml_body),
             ])
             .send()

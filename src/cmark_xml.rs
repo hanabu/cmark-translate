@@ -332,9 +332,23 @@ fn xml_from_ast<'a>(ast_node: &'a comrak::nodes::AstNode<'a>) -> minidom::node::
 
     // Append child nodes
     if let Node::Element(mut xml_elm) = xml_node {
-        for ast_child in ast_node.children() {
-            let xml_child = xml_from_ast(ast_child);
-            xml_elm.append_node(xml_child);
+        match &ast.value {
+            Image(_) => {
+                // In case of img tag, save alt text in attr
+                if let Some(alt_node) = ast_node.first_child() {
+                    if let Text(alt) = &alt_node.data.borrow().value {
+                        // with alt
+                        xml_elm.set_attr("alt", from_utf8(alt).unwrap())
+                    }
+                };
+            }
+            _ => {
+                // Add children
+                for ast_child in ast_node.children() {
+                    let xml_child = xml_from_ast(ast_child);
+                    xml_elm.append_node(xml_child);
+                }
+            }
         }
         Node::Element(xml_elm)
     } else {
@@ -430,6 +444,15 @@ fn ast_from_xml<'a>(
     match xml_elm.name() {
         "header" | "pre" => {
             // Already parsed child texts
+        }
+        "img" => {
+            // Add alt text node
+            if let Some(alt_attr) = xml_elm.attr("alt") {
+                let ast_alt_text = arena.alloc(comrak::nodes::AstNode::from(Text(
+                    alt_attr.to_string().into_bytes(),
+                )));
+                ast_node.append(ast_alt_text);
+            }
         }
         _ => {
             // Add children nodes
