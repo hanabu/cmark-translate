@@ -27,6 +27,7 @@ impl Deepl {
     }
 
     /// Translate single text string
+    #[allow(dead_code)]
     pub async fn translate(
         &self,
         from_lang: Language,
@@ -78,6 +79,9 @@ impl Deepl {
             .send()
             .await?;
 
+        // Returns error
+        resp.error_for_status_ref()?;
+
         // Parse response
         let deepl_resp = resp.json::<DeeplTranslationResponse>().await?;
         Ok(deepl_resp
@@ -125,6 +129,9 @@ impl Deepl {
             .form(&params)
             .send()
             .await?;
+
+        // Returns error
+        resp.error_for_status_ref()?;
 
         // Parse response
         let mut deepl_resp = resp.json::<DeeplTranslationResponse>().await?;
@@ -177,6 +184,9 @@ impl Deepl {
             .send()
             .await?;
 
+        // Returns error
+        resp.error_for_status_ref()?;
+
         // Parse response
         let deepl_resp = resp.json::<DeeplGlossary>().await?;
         Ok(deepl_resp)
@@ -194,6 +204,9 @@ impl Deepl {
             )
             .send()
             .await?;
+
+        // Returns error
+        resp.error_for_status_ref()?;
 
         // Parse response
         let deepl_resp = resp.json::<DeeplListGlossariesResponse>().await?;
@@ -231,6 +244,9 @@ impl Deepl {
             )
             .send()
             .await?;
+
+        // Returns error
+        resp.error_for_status_ref()?;
 
         // Parse response
         let deepl_resp = resp.json::<DeeplUsageResponse>().await?;
@@ -327,7 +343,10 @@ impl DeeplConfig {
         }
 
         // Config file not found
-        Err(std::io::Error::from(std::io::ErrorKind::NotFound))
+        Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "deepl.toml NOT found",
+        ))
     }
 
     // Config from specific file

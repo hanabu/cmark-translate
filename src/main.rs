@@ -53,7 +53,7 @@ enum GlossaryCommands {
         /// Target language (ISO639-1 2 letter code)
         #[arg(short, long)]
         to: String,
-        /// Input glossary TSV file
+        /// Input glossary TSV file - First row should contain language codes
         input: std::path::PathBuf,
     },
     /// List registered glossaries
@@ -68,7 +68,7 @@ enum GlossaryCommands {
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> std::io::Result<()> {
     use std::str::FromStr;
-    env_logger::init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
 
     // parse commandline
     let cli = Cli::parse();
@@ -78,8 +78,7 @@ async fn main() -> std::io::Result<()> {
         deepl::Deepl::with_config(&cfg_file)
     } else {
         deepl::Deepl::new()
-    }
-    .unwrap();
+    };
 
     match cli.command {
         Some(Commands::Translate {
@@ -92,7 +91,8 @@ async fn main() -> std::io::Result<()> {
             let lang_from = deepl::Language::from_str(&from)?;
             let lang_to = deepl::Language::from_str(&to)?;
 
-            trans::translate_cmark_file(&deepl, lang_from, lang_to, &input, &output).await?;
+            trans::translate_cmark_file(&deepl.unwrap(), lang_from, lang_to, &input, &output)
+                .await?;
         }
         Some(Commands::Glossary { command }) => {
             // Glossary management
@@ -110,27 +110,33 @@ async fn main() -> std::io::Result<()> {
                         input,
                         from_lang.as_langcode(),
                         to_lang.as_langcode(),
-                    ).unwrap();
+                    )
+                    .unwrap();
 
-                    deepl
+                    let glossary = deepl
+                        .unwrap()
                         .register_glossaries(&name, from_lang, to_lang, &glossaries)
                         .await
                         .unwrap();
+                    println!(
+                        "Total {} entries are registered as ID = {}",
+                        glossary.entry_count, glossary.glossary_id
+                    );
                 }
                 GlossaryCommands::List => {
                     // List glossaries
-                    let glossaries = deepl.list_glossaries().await.unwrap();
+                    let glossaries = deepl.unwrap().list_glossaries().await.unwrap();
                     for glossary in glossaries {
                         println!("{:?}\n", glossary);
                     }
                 }
                 GlossaryCommands::Delete { id } => {
-                    deepl.remove_glossary(&id).await.unwrap();
+                    deepl.unwrap().remove_glossary(&id).await.unwrap();
                 }
             }
         }
         Some(Commands::Usage) => {
-            let used_chars = deepl.get_usage().await.unwrap();
+            let used_chars = deepl.unwrap().get_usage().await.unwrap();
             println!("{} characters used.", used_chars);
         }
         _ => {
