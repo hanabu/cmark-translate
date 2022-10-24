@@ -1,13 +1,13 @@
 [package]
-name = "md-translate"
+name = "cmark-translate"
 version = "0.1.0"
-authors = ["Hanabusa Masahiro"]
-description = "Translate Markdown using DeepL API"
+authors = ["Hanabusa Masahiro <masa@hanabusa.net>"]
+description = "Translate CommonMark using DeepL API"
 edition = "2021"
 readme = "README.md"
-repository = "https://github.com/hanabu/md-translate"
+repository = "https://github.com/hanabu/cmark-translate"
 license = "MIT"
-keywords = ["markdown", "translate", "deepl"]
+keywords = ["commonmark", "markdown", "translate", "deepl"]
 categories = ["text-processing", "localization"]
 
 [lib]
@@ -26,8 +26,11 @@ toml = "0.5"
 tokio = { version="1", features=["macros", "rt"] }
 umya-spreadsheet = "0.8" 
 
+[target.'cfg(windows)'.build-dependencies]
+embed-resource = "1.7"
+
 [profile.release]
-# Make small binary
+# Make smaller binary
 codegen-units = 1
 lto = "fat"
 opt-level = "s"

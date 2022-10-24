@@ -1,4 +1,5 @@
-# md-translate
+# cmark-translate
 
-Translate Markdown file using DeepL API.
+Translate CommonMark/Markdown file using DeepL API.
+
 
