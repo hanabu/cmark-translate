@@ -1,5 +1,6 @@
 mod cmark_xml;
 mod deepl;
+mod glossary;
 mod trans;
 
 // re-export
