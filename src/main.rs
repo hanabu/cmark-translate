@@ -26,6 +26,9 @@ enum Commands {
         /// Target language (ISO639-1 2 letter code)
         #[arg(short, long)]
         to: String,
+        /// Formality - formal or informal
+        #[arg(long)]
+        formality: Option<String>,
         /// Input CommonMark file
         input: std::path::PathBuf,
         /// Output translated CommonMark file
@@ -84,15 +87,26 @@ async fn main() -> std::io::Result<()> {
         Some(Commands::Translate {
             from,
             to,
+            formality,
             input,
             output,
         }) => {
             // Translate CommonMark file
             let lang_from = deepl::Language::from_str(&from)?;
             let lang_to = deepl::Language::from_str(&to)?;
+            let formality = formality.map_or(Ok(deepl::Formality::Default), |f| {
+                deepl::Formality::from_str(&f)
+            })?;
 
-            trans::translate_cmark_file(&deepl.unwrap(), lang_from, lang_to, &input, &output)
-                .await?;
+            trans::translate_cmark_file(
+                &deepl.unwrap(),
+                lang_from,
+                lang_to,
+                formality,
+                &input,
+                &output,
+            )
+            .await?;
         }
         Some(Commands::Glossary { command }) => {
             // Glossary management

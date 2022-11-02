@@ -32,10 +32,11 @@ impl Deepl {
         &self,
         from_lang: Language,
         to_lang: Language,
+        formality: Formality,
         body: &str,
     ) -> reqwest::Result<String> {
         let mut result = self
-            .translate_strings(from_lang, to_lang, &vec![body])
+            .translate_strings(from_lang, to_lang, formality, &vec![body])
             .await?;
         if 0 < result.len() {
             Ok(result.swap_remove(0))
@@ -49,13 +50,14 @@ impl Deepl {
         &self,
         from_lang: Language,
         to_lang: Language,
+        formality: Formality,
         body: &Vec<&str>,
     ) -> reqwest::Result<Vec<String>> {
         let mut params = vec![
             ("source_lang", from_lang.as_langcode()),
             ("target_lang", to_lang.as_langcode()),
             ("preserve_formatting", "1"),
-            ("formality", "prefer_less"),
+            ("formality", formality.to_str()),
         ];
         if let Some(glossary_id) = self.config.glossary(from_lang, to_lang) {
             log::debug!("Use glossary {}", glossary_id);
@@ -96,6 +98,7 @@ impl Deepl {
         &self,
         from_lang: Language,
         to_lang: Language,
+        formality: Formality,
         xml_body: &str,
     ) -> reqwest::Result<String> {
         // Prepare request parameters
@@ -103,7 +106,7 @@ impl Deepl {
             ("source_lang", from_lang.as_langcode()),
             ("target_lang", to_lang.as_langcode()),
             ("preserve_formatting", "1"),
-            ("formality", "prefer_less"),
+            ("formality", formality.to_str()),
             ("tag_handling", "xml"),
             ("ignore_tags", "header,embed,object"),
             (
@@ -301,6 +304,44 @@ impl std::str::FromStr for Language {
             "pt" => Ok(Self::Pt),
             "pt-br" => Ok(Self::PtBr),
             "ru" => Ok(Self::Ru),
+            _ => Err(std::io::Error::from(std::io::ErrorKind::InvalidInput)),
+        }
+    }
+}
+
+/// Translation output formality
+#[derive(Clone, Copy, serde::Deserialize)]
+pub enum Formality {
+    Default,
+    Formal,
+    Informal,
+}
+
+impl Formality {
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            Self::Default => "default",
+            Self::Formal => "prefer_more",
+            Self::Informal => "prefer_less",
+        }
+    }
+}
+
+impl Default for Formality {
+    fn default() -> Self {
+        Self::Default
+    }
+}
+
+impl std::str::FromStr for Formality {
+    type Err = std::io::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let lowcase = s.to_ascii_lowercase();
+        match lowcase.as_str() {
+            "default" => Ok(Self::Default),
+            "formal" => Ok(Self::Formal),
+            "informal" => Ok(Self::Informal),
             _ => Err(std::io::Error::from(std::io::ErrorKind::InvalidInput)),
         }
     }

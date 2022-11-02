@@ -6,6 +6,7 @@ pub async fn translate_cmark_file<P: AsRef<std::path::Path>>(
     deepl: &deepl::Deepl,
     from_lang: deepl::Language,
     to_lang: deepl::Language,
+    formality: deepl::Formality,
     src_path: P,
     dst_path: P,
 ) -> std::io::Result<()> {
@@ -25,13 +26,14 @@ pub async fn translate_cmark_file<P: AsRef<std::path::Path>>(
     // Parse frontmatter
     let translated_frontmatter = if let Some(frontmatter) = frontmatter {
         // translate TOML frontmatter
-        Some(translate_toml(&deepl, from_lang, to_lang, &frontmatter).await?)
+        Some(translate_toml(&deepl, from_lang, to_lang, formality, &frontmatter).await?)
     } else {
         None
     };
 
     // Translate CommonMark body
-    let translated_cmark = translate_cmark(&deepl, from_lang, to_lang, &cmark_text).await?;
+    let translated_cmark =
+        translate_cmark(&deepl, from_lang, to_lang, formality, &cmark_text).await?;
 
     // Print result
     let mut f = std::fs::File::create(dst_path)?;
@@ -49,6 +51,7 @@ pub async fn translate_toml(
     deepl: &deepl::Deepl,
     from_lang: deepl::Language,
     to_lang: deepl::Language,
+    formality: deepl::Formality,
     toml_frontmatter: &str,
 ) -> Result<String, std::io::Error> {
     if let toml::Value::Table(mut root) = toml_frontmatter.parse::<toml::Value>()? {
@@ -86,7 +89,7 @@ pub async fn translate_toml(
             .collect::<Vec<&str>>();
         // Translate texts
         let translated_vec = deepl
-            .translate_strings(from_lang, to_lang, &src_vec)
+            .translate_strings(from_lang, to_lang, formality, &src_vec)
             .await
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
@@ -116,13 +119,17 @@ pub async fn translate_cmark(
     deepl: &deepl::Deepl,
     from_lang: deepl::Language,
     to_lang: deepl::Language,
+    formality: deepl::Formality,
     cmark_text: &str,
 ) -> Result<String, std::io::Error> {
     let xml = cmark_xml::xml_from_cmark(&cmark_text, true);
     log::trace!("XML: {}\n", xml);
 
     // translate
-    let xml_translated = deepl.translate_xml(from_lang, to_lang, &xml).await.unwrap();
+    let xml_translated = deepl
+        .translate_xml(from_lang, to_lang, formality, &xml)
+        .await
+        .unwrap();
 
     // write back to markdown format
     let cmark_translated = cmark_xml::cmark_from_xml(&xml_translated, true).unwrap();
