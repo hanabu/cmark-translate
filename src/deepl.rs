@@ -475,7 +475,12 @@ mod test {
         let deepl = Deepl::new().unwrap();
 
         let resp = deepl
-            .translate(Language::En, Language::De, "Hello, World!")
+            .translate(
+                Language::En,
+                Language::De,
+                Formality::Default,
+                "Hello, World!",
+            )
             .await
             .unwrap();
         assert_eq!(&resp, "Hallo, Welt!");

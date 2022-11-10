@@ -117,11 +117,12 @@ fn escape_all_shortcodes(cmark_text: &str) -> String {
     while let Some((left, right)) = substr.split_once("{{") {
         escaped1 += left;
         if let Some((shortcode, rest)) = right.split_once("}}") {
-            escaped1 += &format!("<!--{{{{{}}}}}-->", shortcode);
+            // Dirty workaround: Append $$$$ here to force HTML comment as inline element
+            escaped1 += &format!("$$$$<!--{{{{{}}}}}-->", shortcode);
             substr = rest;
         } else {
             // No "}}" found, assume all string upto EOF are shortcode
-            escaped1 += &format!("<!--{{{{{}}}}}-->", right);
+            escaped1 += &format!("$$$$<!--{{{{{}}}}}-->", right);
             substr = "";
             break;
         }
@@ -289,7 +290,10 @@ fn xml_from_ast<'a>(ast_node: &'a comrak::nodes::AstNode<'a>) -> minidom::node::
             Node::Element(elm)
         }
         TableCell => Node::Element(Element::bare("td", NS)),
-        Text(t) => Node::Text(String::from_utf8(t.clone()).unwrap()),
+        Text(t) => {
+            // Remove escape prefix (Workaround for shortcode escape)
+            Node::Text(String::from_utf8(t.clone()).unwrap().replace("$$$$", ""))
+        }
         TaskItem(checked) => Node::Element(
             Element::builder("input", NS)
                 .attr("checked", *checked as i32)
@@ -380,7 +384,7 @@ fn ast_from_xml<'a>(
         "dd" => DescriptionDetails,
         "pre" => CodeBlock(comrak::nodes::NodeCodeBlock {
             fenced: true,
-            fence_char: '`' as u8,
+            fence_char: b'`',
             fence_length: 3,
             fence_offset: 0,
             info: Vec::from(xml_elm.attr("info").unwrap_or("")),
@@ -492,7 +496,7 @@ fn node_list_from_xml(xml_elm: &minidom::Element) -> comrak::nodes::NodeList {
             .map_or(0, |v| v.parse().unwrap_or(0)),
         start: xml_elm.attr("start").map_or(0, |v| v.parse().unwrap_or(0)),
         delimiter: comrak::nodes::ListDelimType::Period,
-        bullet_char: '-' as u8,
+        bullet_char: b'-',
         tight: Some("1") == xml_elm.attr("tight"),
     }
 }
