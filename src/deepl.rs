@@ -154,8 +154,8 @@ impl Deepl {
         to_lang: Language,
         glossaries: &[(S, S)],
     ) -> reqwest::Result<DeeplGlossary> {
-        // Make TSV text
-        let tsv: String = glossaries
+        // Remove spaces, empty items
+        let mut filtered_glossaries = glossaries
             .iter()
             .filter_map(|(from, to)| {
                 let from_trimed = from.as_ref().trim();
@@ -163,8 +163,29 @@ impl Deepl {
                 if from_trimed.is_empty() || to_trimed.is_empty() {
                     None
                 } else {
-                    Some(format!("{}\t{}", from_trimed, to_trimed))
+                    Some((from, to))
                 }
+            })
+            .collect::<Vec<_>>();
+
+        // Check duplicates
+        filtered_glossaries.sort_by(|(from1, _), (from2, _)| from1.as_ref().cmp(from2.as_ref()));
+        filtered_glossaries.iter().fold("", |prev_key, (from, _)| {
+            let key = from.as_ref();
+            if prev_key == key {
+                // Duplicated
+                log::warn!("Duplicated key : \"{}\"", key);
+            }
+            key
+        });
+
+        // Make TSV text
+        let tsv: String = filtered_glossaries
+            .iter()
+            .map(|(from, to)| {
+                let row = format!("{}\t{}", from.as_ref(), to.as_ref());
+                log::trace!("TSV: {}", row);
+                row
             })
             .collect::<Vec<String>>()
             .join("\n");
