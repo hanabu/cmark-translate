@@ -187,12 +187,17 @@ impl Deepl {
             .send()
             .await?;
 
-        // Returns error
-        resp.error_for_status_ref()?;
-
-        // Parse response
-        let deepl_resp = resp.json::<DeeplGlossary>().await?;
-        Ok(deepl_resp)
+        if let Err(err) = resp.error_for_status_ref() {
+            // Returns error with printing details
+            if let Ok(err_body_text) = resp.text().await {
+                log::error!("{}", err_body_text);
+            }
+            Err(err)
+        } else {
+            // Success, parse response
+            let deepl_resp = resp.json::<DeeplGlossary>().await?;
+            Ok(deepl_resp)
+        }
     }
 
     /// List registered glossaries
