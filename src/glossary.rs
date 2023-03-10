@@ -4,9 +4,9 @@
 //!
 
 pub fn read_glossary<P: AsRef<std::path::Path>>(
-    xlsx_path: P,
-    from: &str,
-    to: &str,
+    _xlsx_path: P,
+    _from: &str,
+    _to: &str,
 ) -> Result<Vec<(String, String)>, umya_spreadsheet::reader::xlsx::XlsxError> {
     todo!()
 }

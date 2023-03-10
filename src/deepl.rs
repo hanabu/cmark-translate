@@ -163,27 +163,26 @@ impl Deepl {
                 if from_trimed.is_empty() || to_trimed.is_empty() {
                     None
                 } else {
-                    Some((from, to))
+                    Some((from_trimed, to_trimed))
                 }
             })
             .collect::<Vec<_>>();
 
         // Check duplicates
-        filtered_glossaries.sort_by(|(from1, _), (from2, _)| from1.as_ref().cmp(from2.as_ref()));
-        filtered_glossaries.iter().fold("", |prev_key, (from, _)| {
-            let key = from.as_ref();
-            if prev_key == key {
+        filtered_glossaries.sort_by(|(from1, _), (from2, _)| from1.cmp(from2));
+        filtered_glossaries.iter().fold("", |prev_from, (from, _)| {
+            if prev_from == *from {
                 // Duplicated
-                log::warn!("Duplicated key : \"{}\"", key);
+                log::warn!("Duplicated key : \"{}\"", *from);
             }
-            key
+            *from
         });
 
         // Make TSV text
         let tsv: String = filtered_glossaries
             .iter()
             .map(|(from, to)| {
-                let row = format!("{}\t{}", from.as_ref(), to.as_ref());
+                let row = format!("{}\t{}", from, to);
                 log::trace!("TSV: {}", row);
                 row
             })
