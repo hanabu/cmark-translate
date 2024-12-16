@@ -512,7 +512,8 @@ impl DeeplConfig {
         // Read .deepl as TOML
         let mut config = String::new();
         file.read_to_string(&mut config)?;
-        let deepl_config: DeeplConfig = toml::from_str(&config)?;
+        let deepl_config: DeeplConfig = toml::from_str(&config)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
 
         Ok(deepl_config)
     }

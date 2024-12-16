@@ -54,63 +54,70 @@ pub async fn translate_toml(
     formality: deepl::Formality,
     toml_frontmatter: &str,
 ) -> Result<String, std::io::Error> {
-    if let toml::Value::Table(mut root) = toml_frontmatter.parse::<toml::Value>()? {
-        // Pickup TOML key for translation
-        let mut should_be_translate: Vec<&mut String> = vec![];
-        for (key, val) in &mut root {
-            match key.as_str() {
-                "title" | "description" => {
-                    if let toml::Value::String(val) = val {
-                        should_be_translate.push(val);
+    match toml_frontmatter.parse::<toml::Value>() {
+        Ok(toml::Value::Table(mut root)) => {
+            // Pickup TOML key for translation
+            let mut should_be_translate: Vec<&mut String> = vec![];
+            for (key, val) in &mut root {
+                match key.as_str() {
+                    "title" | "description" => {
+                        if let toml::Value::String(val) = val {
+                            should_be_translate.push(val);
+                        }
                     }
-                }
-                "extra" => {
-                    if let toml::Value::Table(extra) = val {
-                        for (extra_key, extra_val) in extra {
-                            match extra_key.as_str() {
-                                "time" => {
-                                    if let toml::Value::String(extra_val) = extra_val {
-                                        should_be_translate.push(extra_val);
+                    "extra" => {
+                        if let toml::Value::Table(extra) = val {
+                            for (extra_key, extra_val) in extra {
+                                match extra_key.as_str() {
+                                    "time" => {
+                                        if let toml::Value::String(extra_val) = extra_val {
+                                            should_be_translate.push(extra_val);
+                                        }
                                     }
+                                    _ => (),
                                 }
-                                _ => (),
                             }
                         }
                     }
+                    _ => {}
                 }
-                _ => {}
             }
+
+            // Prepare input Vec
+            let src_vec = should_be_translate
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<&str>>();
+            // Translate texts
+            let translated_vec = deepl
+                .translate_strings(from_lang, to_lang, formality, &src_vec)
+                .await
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
+            // Replace TOML value with translated text
+            should_be_translate
+                .into_iter()
+                .zip(translated_vec.iter())
+                .for_each(|(toml_val, translated_str)| {
+                    toml_val.clear();
+                    *toml_val += translated_str.as_str();
+                });
+
+            // Serialize toml::Value should not fail
+            let translated_frontmatter = toml::to_string_pretty(&toml::Value::Table(root)).unwrap();
+            // Show translated frontmatter
+            log::trace!("Translated TOML :\n{}\n", translated_frontmatter);
+
+            Ok(translated_frontmatter)
         }
-
-        // Prepare input Vec
-        let src_vec = should_be_translate
-            .iter()
-            .map(|s| s.as_str())
-            .collect::<Vec<&str>>();
-        // Translate texts
-        let translated_vec = deepl
-            .translate_strings(from_lang, to_lang, formality, &src_vec)
-            .await
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
-
-        // Replace TOML value with translated text
-        should_be_translate
-            .into_iter()
-            .zip(translated_vec.iter())
-            .for_each(|(toml_val, translated_str)| {
-                toml_val.clear();
-                *toml_val += translated_str.as_str();
-            });
-
-        // Serialize toml::Value should not fail
-        let translated_frontmatter = toml::to_string_pretty(&toml::Value::Table(root)).unwrap();
-        // Show translated frontmatter
-        log::trace!("Translated TOML :\n{}\n", translated_frontmatter);
-
-        Ok(translated_frontmatter)
-    } else {
-        // TOML parse failed
-        Err(std::io::Error::from(std::io::ErrorKind::InvalidData))
+        Ok(_) => {
+            // TOML parse failed
+            Err(std::io::Error::from(std::io::ErrorKind::InvalidData))
+        }
+        Err(e) => {
+            // TOML parse failed
+            Err(std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+        }
     }
 }
 
