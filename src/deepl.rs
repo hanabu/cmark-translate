@@ -54,7 +54,7 @@ impl Deepl {
         body: &Vec<&str>,
     ) -> reqwest::Result<Vec<String>> {
         let mut params = vec![
-            ("source_lang", from_lang.as_langcode()),
+            ("source_lang", from_lang.as_src_langcode()),
             ("target_lang", to_lang.as_langcode()),
             ("preserve_formatting", "1"),
             ("formality", formality.to_str()),
@@ -103,7 +103,7 @@ impl Deepl {
     ) -> reqwest::Result<String> {
         // Prepare request parameters
         let mut params = vec![
-            ("source_lang", from_lang.as_langcode()),
+            ("source_lang", from_lang.as_src_langcode()),
             ("target_lang", to_lang.as_langcode()),
             ("preserve_formatting", "1"),
             ("formality", formality.to_str()),
@@ -199,7 +199,7 @@ impl Deepl {
             )
             .form(&[
                 ("name", name),
-                ("source_lang", from_lang.as_langcode()),
+                ("source_lang", from_lang.as_src_langcode()),
                 ("target_lang", to_lang.as_langcode()),
                 ("entries_format", "tsv"),
                 ("entries", &tsv),
@@ -284,31 +284,94 @@ impl Deepl {
 
 #[derive(Clone, Copy, serde::Deserialize)]
 pub enum Language {
-    De,
-    Es,
-    En,
-    Fr,
-    It,
-    Ja,
-    Nl,
-    Pt,
-    PtBr,
-    Ru,
+    Ar,     // Arabic
+    Bg,     // Bulgarian
+    Cs,     // Czech
+    Da,     // Danish
+    De,     // German
+    El,     // Greek
+    En,     // English (unspecified variant)
+    EnGb,   // English (British)
+    EnUs,   // English (American)
+    Es,     // Spanish
+    Et,     // Estonian
+    Fi,     // Finnish
+    Fr,     // French
+    Hu,     // Hungarian
+    Id,     // Indonesian
+    It,     // Italian
+    Ja,     // Japanese
+    Ko,     // Korean
+    Lt,     // Lithuanian
+    Lv,     // Latvian
+    Nb,     // Norwegian Bokmål
+    Nl,     // Dutch
+    Pl,     // Polish
+    Pt,     // Portuguese (unspecified variant)
+    PtBr,   // Portuguese (Brazilian)
+    PtPt,   // Portuguese (Pt excluding Brazilian Portuguese)
+    Ro,     // Romanian
+    Ru,     // Russian
+    Sk,     // Slovak
+    Sl,     // Slovenian
+    Sv,     // Swedish
+    Tr,     // Turkish
+    Uk,     // Ukrainian
+    Zh,     // Chinese (unspecified variant)
+    ZhHans, // Chinese (simplified)
+    ZhHant, // Chinese (traditional)
 }
 
 impl Language {
+    /// DeepL supported target language code
     pub fn as_langcode(&self) -> &'static str {
         match self {
+            Self::Ar => "ar",
+            Self::Bg => "bg",
+            Self::Cs => "cs",
+            Self::Da => "da",
             Self::De => "de",
+            Self::El => "el",
+            Self::En => "en-us",
+            Self::EnGb => "en-gb",
+            Self::EnUs => "en-us",
             Self::Es => "es",
-            Self::En => "en",
+            Self::Et => "et",
+            Self::Fi => "fi",
             Self::Fr => "fr",
+            Self::Hu => "hu",
+            Self::Id => "id",
             Self::It => "it",
             Self::Ja => "ja",
+            Self::Ko => "ko",
+            Self::Lt => "lt",
+            Self::Lv => "lv",
+            Self::Nb => "nb",
             Self::Nl => "nl",
+            Self::Pl => "pl",
             Self::Pt => "pt-br",
             Self::PtBr => "pt-br",
+            Self::PtPt => "pt-pt",
+            Self::Ro => "ro",
             Self::Ru => "ru",
+            Self::Sk => "sk",
+            Self::Sl => "sl",
+            Self::Sv => "sv",
+            Self::Tr => "tr",
+            Self::Uk => "uk",
+            Self::Zh => "zh-hans",
+            Self::ZhHans => "zh-hans",
+            Self::ZhHant => "zh-hant",
+        }
+    }
+
+    /// DeepL supported source language code
+    pub fn as_src_langcode(&self) -> &'static str {
+        match self {
+            Self::En | Self::EnGb | Self::EnUs => "en",
+            Self::Pt | Self::PtBr | Self::PtPt => "pt",
+            Self::Zh | Self::ZhHans | Self::ZhHant => "zh",
+            _ => self.as_langcode(),
         }
     }
 }
@@ -319,16 +382,42 @@ impl std::str::FromStr for Language {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let lowcase = s.to_ascii_lowercase();
         match lowcase.as_str() {
+            "ar" => Ok(Self::Ar),
+            "bg" => Ok(Self::Bg),
+            "cs" => Ok(Self::Cs),
+            "da" => Ok(Self::Da),
             "de" => Ok(Self::De),
-            "es" => Ok(Self::Es),
+            "el" => Ok(Self::El),
             "en" => Ok(Self::En),
+            "en-gb" => Ok(Self::EnGb),
+            "en-us" => Ok(Self::EnUs),
+            "es" => Ok(Self::Es),
+            "et" => Ok(Self::Et),
+            "fi" => Ok(Self::Fi),
             "fr" => Ok(Self::Fr),
+            "hu" => Ok(Self::Hu),
+            "id" => Ok(Self::Id),
             "it" => Ok(Self::It),
             "ja" => Ok(Self::Ja),
+            "ko" => Ok(Self::Ko),
+            "lt" => Ok(Self::Lt),
+            "lv" => Ok(Self::Lv),
+            "nb" => Ok(Self::Nb),
             "nl" => Ok(Self::Nl),
+            "pl" => Ok(Self::Pl),
             "pt" => Ok(Self::Pt),
             "pt-br" => Ok(Self::PtBr),
+            "pt-pt" => Ok(Self::PtPt),
+            "ro" => Ok(Self::Ro),
             "ru" => Ok(Self::Ru),
+            "sk" => Ok(Self::Sk),
+            "sl" => Ok(Self::Sl),
+            "sv" => Ok(Self::Sv),
+            "tr" => Ok(Self::Tr),
+            "uk" => Ok(Self::Uk),
+            "zh" => Ok(Self::Zh),
+            "zh-hans" => Ok(Self::ZhHans),
+            "zh-hant" => Ok(Self::ZhHant),
             _ => Err(std::io::Error::from(std::io::ErrorKind::InvalidInput)),
         }
     }

@@ -1,6 +1,6 @@
 [package]
 name = "cmark-translate"
-version = "0.2.3"
+version = "0.2.4"
 authors = ["Hanabusa Masahiro <masa@hanabusa.net>"]
 description = "Translate CommonMark using DeepL API"
 edition = "2021"
