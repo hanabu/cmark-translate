@@ -531,7 +531,7 @@ impl DeeplConfig {
 
     // Find glossary
     fn glossary<'a>(&'a self, from_lang: Language, to_lang: Language) -> Option<&'a str> {
-        let glossary_key = format!("{}_{}", from_lang.as_langcode(), to_lang.as_langcode());
+        let glossary_key = format!("{}_{}", from_lang.as_src_langcode(), to_lang.as_langcode());
         self.glossaries.get(&glossary_key).map(|v| v.as_str())
     }
 }
